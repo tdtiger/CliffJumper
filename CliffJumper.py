@@ -9,6 +9,8 @@ class Player:
         self.pos = 0
         self.prepos = 0
         self.keyIn = None
+        self.offsetX = 0
+        self.offsetY = 0
 
     def Move(self, keyIn):
         if keyIn == "left":
@@ -20,13 +22,24 @@ class Player:
             self.prepos = self.pos
             self.pos = min(self.pos + 1, 2)
 
+    def Scroll(self):
+        if self.offsetY > -38:
+            self.offsetX += 1
+            self.offsetY -= 2
+        else:
+            self.offsetX = 0
+            self.offsetY = 0
+
     def draw(self):
         if self.pos == self.prepos:
-            pyxel.blt(200 + self.pos * 40, 240, 0, 0, 0, 8, 8, 0)
+            pyxel.blt(200 + self.pos * 40, 241 + self.offsetY, 0, 0, 0, 8, 8, 0)
         elif self.pos > self.prepos:
-            pyxel.blt(200 + self.pos * 40, 240, 0, 8, 0, 8, 8, 0)
+            pyxel.blt(200 + self.pos * 40 + self.offsetX, 241 + self.offsetY, 0, 8, 0, 8, 8, 0)
         elif self.pos < self.prepos:
-            pyxel.blt(200 + self.pos * 40, 240, 0, 0, 8, 8, 8, 0)
+            pyxel.blt(200 + self.pos * 40 - self.offsetX, 241 + self.offsetY, 0, 0, 8, 8, 8, 0)
+
+        # if self.offsetY == 0:
+        #     pyxel.blt(200 + self.pos * 40, 276, 0, 0, 0, 8, 8, 0)
 
 # 足場の定義部分．
 # 生成されるたびにランダムに位置が変化する．
@@ -45,6 +58,7 @@ class App():
         self.writer = puf.Writer("IPA_PGothic.ttf")
         self.screen = "title"
         self.volume = 50
+        self.isScroll = False
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -76,7 +90,7 @@ class App():
     def DrawTitle(self):
         self.writer.draw(120, 80, "Cliff Jumper", 30, 2)
         pyxel.rect(120, 145, 150, 30, 11)
-        self.writer.draw(130, 150, "ゲームスタート", 20, 2)
+        self.writer.draw(133, 150, "ゲームスタート", 20, 2)
         pyxel.rect(120, 185, 150, 30, 11)
         self.writer.draw(150, 190, "オプション", 20, 2)
         pyxel.rect(120, 225, 150, 30, 11)
@@ -113,20 +127,33 @@ class App():
         if pyxel.btnp(pyxel.KEY_Q):
             self.screen = "title"
             pyxel.mouse(True)
-        elif pyxel.btnp(pyxel.KEY_LEFT):
-            self.player.keyIn = "left"
-        elif pyxel.btnp(pyxel.KEY_UP):
-            self.player.keyIn = "up"
-        elif pyxel.btnp(pyxel.KEY_RIGHT):
-            self.player.keyIn = "right"
+        elif not self.isScroll:
+            if pyxel.btnp(pyxel.KEY_LEFT):
+                self.player.keyIn = "left"
+                self.isScroll = True
+            elif pyxel.btnp(pyxel.KEY_UP):
+                self.player.keyIn = "up"
+                self.isScroll = True
+            elif pyxel.btnp(pyxel.KEY_RIGHT):
+                self.player.keyIn = "right"
+                self.isScroll = True
 
-        self.player.Move(self.player.keyIn)
-        self.player.keyIn = None
+        if self.isScroll:
+            self.player.Scroll()
+            if self.player.offsetY == 0:
+                self.isScroll = False
+                self.player.Move(self.player.keyIn)
+                self.player.keyIn = None
 
     def DrawGame(self):
         for i in range(10):
             for j in range(7):
                 pyxel.blt(92 + 32 * j, 0 + 32 * i, 0, 16 * (j % 2 + 1), 0, 32, 32)
+
+        pyxel.blt(189, 235, 0, 80, 0, 32, 32)
+        for i in self.scaffold[0].exs:
+            pyxel.blt(109 + i * 40, 200, 0, 80, 0, 32, 32)
+
         self.player.draw()
         pyxel.text(5, 5, "score", 7)
 
