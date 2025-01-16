@@ -5,6 +5,7 @@ import random
 # プレイヤーの定義部分
 # ゲーム画面において左右，または上矢印の入力を受け付け，それぞれに対応した位置に移動する．
 class Player:
+    # pos，preposは使わない仕様にしたため削除予定
     def __init__(self):
         self.pos = 0
         self.prepos = 0
@@ -12,6 +13,7 @@ class Player:
         self.offsetX = 0
         self.offsetY = 0
 
+    # 現状，ここで設定した値は使わないような仕様にしたため，削除予定
     def Move(self, keyIn):
         if keyIn == "left":
             self.prepos = self.pos
@@ -21,7 +23,9 @@ class Player:
         elif self.keyIn == "right":
             self.prepos = self.pos
             self.pos = min(self.pos + 1, 2)
+        print(f"{self.prepos=}, {self.pos=}")
 
+    # 移動前の地点と移動先の地点の差を記録する
     def Scroll(self):
         if self.offsetY > -38:
             self.offsetX += 1
@@ -30,12 +34,16 @@ class Player:
             self.offsetX = 0
             self.offsetY = 0
 
+    # プレイヤーの描画
     def draw(self):
-        if self.pos == self.prepos:
+        # 何も入力されていない，あるいは上が入力されていたら正面を向いているプレイヤーを描画
+        if self.keyIn == None or self.keyIn == "up": #self.pos == self.prepos:
             pyxel.blt(200 + self.pos * 40, 241 + self.offsetY, 0, 0, 0, 8, 8, 0)
-        elif self.pos > self.prepos:
+        # 右が入力されていたら右向きのプレイヤーを描画
+        elif self.keyIn == "right": #self.pos > self.prepos:
             pyxel.blt(200 + self.pos * 40 + self.offsetX, 241 + self.offsetY, 0, 8, 0, 8, 8, 0)
-        elif self.pos < self.prepos:
+        # 左が入力されていたら左向きのプレイヤーを描画
+        elif self.keyIn == "left": #self.pos < self.prepos:
             pyxel.blt(200 + self.pos * 40 - self.offsetX, 241 + self.offsetY, 0, 0, 8, 8, 8, 0)
 
         # if self.offsetY == 0:
@@ -43,22 +51,36 @@ class Player:
 
 # 足場の定義部分．
 # 生成されるたびにランダムに位置が変化する．
-# 現時点では生成される数は2つで固定にしているが，難易度ごとに変化するように変数を与える仕様にしても良いのかもしれない．
+# 現時点では生成される数は3つで固定にしているが，難易度ごとに変化するように変数を与える仕様にしても良いのかもしれない．
 class Scaffold:
     def __init__(self):
         self.exs = random.sample([0, 1, 2, 3, 4], 3)
+        self.offsetY = 0
+
+    # 移動前の地点と移動先の地点の差を記録する
+    def Scroll(self):
+        if self.offsetY > -38:
+            self.offsetY -= 2
+        else:
+            self.offsetY = 0
 
 # アプリ本体の定義部分
 # 基本的にはscreenという変数に現在のモードを格納し，それに応じた画面を描画する．
 class App():
     def __init__(self):
+        # ウィンドウサイズの設定
         pyxel.init(400, 300, title = "Cliff Jumper")
+        # マウスカーソルの有効化
         pyxel.mouse(True)
+        # 画像の読み込み
         pyxel.load("my_resource.pyxres")
+        # フォントの設定
         self.writer = puf.Writer("IPA_PGothic.ttf")
+
         self.screen = "title"
         self.volume = 50
         self.isScroll = False
+        self.phase = 0
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -70,6 +92,7 @@ class App():
             self.UpdateOption()
 
     def draw(self):
+        # 背景色の設定
         pyxel.cls(1)
         # 各モード画面の描画
         if self.screen == "title":
@@ -83,7 +106,8 @@ class App():
         self.player = None
         self.scaffold = []
         self.player = Player()
-        self.scaffold.append(Scaffold())
+        for _ in range(5):
+            self.scaffold.append(Scaffold())
 
 
     # タイトル画面の描画
@@ -97,6 +121,7 @@ class App():
         self.writer.draw(145, 230, "ゲーム終了", 20, 2)
 
     def UpdateTitle(self):
+        # 入力されたキー，あるいは押されたボタンに応じてモード遷移
         if pyxel.btnp(pyxel.KEY_1) or (pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT) and 120 < pyxel.mouse_x < 270 and 145 < pyxel.mouse_y < 175):
             self.screen = "game"
             self.ResetGame()
@@ -141,9 +166,9 @@ class App():
         if self.isScroll:
             self.player.Scroll()
             if self.player.offsetY == 0:
-                self.isScroll = False
                 self.player.Move(self.player.keyIn)
                 self.player.keyIn = None
+                self.isScroll = False
 
     def DrawGame(self):
         for i in range(10):
@@ -151,8 +176,10 @@ class App():
                 pyxel.blt(92 + 32 * j, 0 + 32 * i, 0, 16 * (j % 2 + 1), 0, 32, 32)
 
         pyxel.blt(189, 235, 0, 80, 0, 32, 32)
-        for i in self.scaffold[0].exs:
-            pyxel.blt(109 + i * 40, 200, 0, 80, 0, 32, 32)
+
+        for i in range(5):
+            for j in self.scaffold[i].exs:
+                pyxel.blt(109 + j * 40, 200 - 35 * i, 0, 80, 0, 32, 32)
 
         self.player.draw()
         pyxel.text(5, 5, "score", 7)
