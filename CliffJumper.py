@@ -9,6 +9,8 @@ class Player:
     def __init__(self):
         self.pos = 0
         self.prepos = 0
+        self.x = 200
+        self.y = 241
         self.keyIn = None
         self.offsetX = 0
         self.offsetY = 0
@@ -37,13 +39,13 @@ class Player:
     # プレイヤーの描画
     def draw(self):
         # 何も入力されていない，あるいは上が入力されていたら正面を向いているプレイヤーを描画
-        if self.keyIn == None or self.keyIn == "up": #self.pos == self.prepos:
+        if self.keyIn == None or self.keyIn == "up":
             pyxel.blt(200 + self.pos * 40, 241 + self.offsetY, 0, 0, 0, 8, 8, 0)
         # 右が入力されていたら右向きのプレイヤーを描画
-        elif self.keyIn == "right": #self.pos > self.prepos:
+        elif self.keyIn == "right":
             pyxel.blt(200 + self.pos * 40 + self.offsetX, 241 + self.offsetY, 0, 8, 0, 8, 8, 0)
         # 左が入力されていたら左向きのプレイヤーを描画
-        elif self.keyIn == "left": #self.pos < self.prepos:
+        elif self.keyIn == "left":
             pyxel.blt(200 + self.pos * 40 - self.offsetX, 241 + self.offsetY, 0, 0, 8, 8, 8, 0)
 
         # if self.offsetY == 0:
@@ -63,6 +65,10 @@ class Scaffold:
             self.offsetY -= 2
         else:
             self.offsetY = 0
+
+    def draw(self, i):
+        for j in self.exs:
+            pyxel.blt(109 + j * 40, 200 - 35 * i, 0, 80, 0, 32, 32)
 
 # アプリ本体の定義部分
 # 基本的にはscreenという変数に現在のモードを格納し，それに応じた画面を描画する．
@@ -178,8 +184,7 @@ class App():
         pyxel.blt(189, 235, 0, 80, 0, 32, 32)
 
         for i in range(5):
-            for j in self.scaffold[i].exs:
-                pyxel.blt(109 + j * 40, 200 - 35 * i, 0, 80, 0, 32, 32)
+            self.scaffold[i].draw(i)
 
         self.player.draw()
         pyxel.text(5, 5, "score", 7)
